@@ -7,4 +7,5 @@ fastapi-users[sqlalchemy]
 fastapi[all]
 uvicorn~=0.34.0
 asyncpg
+bcrypt==4.0.1
 passlib[bcrypt]
