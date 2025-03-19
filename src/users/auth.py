@@ -6,11 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, insert, text
 from datetime import timedelta
 
-from src.users.schemas import RegUser, Message, Token
+from src.users.schemas import RegUser, Message, Token, UserData
 from src.database import get_async_session
 from src.users.models import User
-from src.users.service import get_password_hash, get_user, authenticate_user, create_access_token
+from src.users.service import get_password_hash, get_user, authenticate_user, create_access_token, get_current_active_user, get_current_user
 from src.config import settings
+
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
@@ -51,3 +52,9 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
+
+@router.get("/users/me/", response_model=UserData)
+async def read_users_me(
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    return current_user
