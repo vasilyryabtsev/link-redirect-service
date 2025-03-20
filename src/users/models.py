@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Boolean, text
 
 from src.database import Base, int_pk, str_uniq
@@ -9,6 +9,7 @@ class User(Base):
     username: Mapped[str_uniq]
     hashed_password: Mapped[str_uniq]
     disabled: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    links = relationship("Link", back_populates="user") 
 
     def __repr__(self):
         return (f"{self.__class__.__name__}(id={self.id}, "
