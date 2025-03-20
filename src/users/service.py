@@ -16,6 +16,12 @@ from src.database import get_async_session
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
+credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -46,11 +52,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    print('Hello')
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         username = payload.get("sub")
@@ -58,16 +60,30 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
             raise credentials_exception
         token_data = TokenData(username=username)
     except InvalidTokenError:
-        raise credentials_exception
+        return None
     async for session in get_async_session():
         user = await get_user(username=token_data.username, session=session)
     if user is None:
         raise credentials_exception
-    return user
+    return UserData(username=user.username, disabled=user.disabled)
 
 async def get_current_active_user(
     current_user: Annotated[UserData, Depends(get_current_user)],
 ):
-    if current_user.disabled:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+    try:
+        if current_user.disabled:
+            raise HTTPException(status_code=400, detail="Inactive user")
+        return current_user
+    except AttributeError:
+        raise credentials_exception
+    
+async def get_current_active_user_soft(
+    current_user: Annotated[UserData, Depends(get_current_user)],
+):
+    try:
+        if current_user.disabled:
+            raise HTTPException(status_code=400, detail="Inactive user")
+        return current_user
+    except AttributeError:
+        return None
+
