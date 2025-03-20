@@ -1,22 +1,21 @@
-from typing import Annotated
-
+from typing import Annotated, Dict
 from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, text
+from sqlalchemy import insert
 from datetime import timedelta
 
-from src.users.schemas import RegUser, Message, Token, UserData
+from src.users.schemas import RegUser, Message, Token
 from src.database import get_async_session
 from src.users.models import User
-from src.users.service import get_password_hash, get_user, authenticate_user, create_access_token, get_current_active_user, get_current_user
+from src.users.service import get_password_hash, get_user, authenticate_user, create_access_token
 from src.config import settings
 
 
 router = APIRouter(prefix='/auth', tags=['Auth'])
 
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
-async def register_user(user_data: RegUser, session: AsyncSession = Depends(get_async_session)) -> Message:
+async def register_user(user_data: RegUser, session: AsyncSession = Depends(get_async_session)) -> Dict:
     user_dict = user_data.model_dump()
     user = await get_user(user_dict['username'], session)
     if user:
@@ -31,7 +30,7 @@ async def register_user(user_data: RegUser, session: AsyncSession = Depends(get_
     try:
         await session.execute(statement)
         await session.commit()
-        return Message(text='Registration completed!')
+        return {'text': 'Registration completed!'}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
@@ -52,9 +51,3 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
-
-@router.get("/users/me/", response_model=UserData)
-async def read_users_me(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-):
-    return current_user
