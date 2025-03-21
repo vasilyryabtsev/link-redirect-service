@@ -1,6 +1,7 @@
 from datetime import datetime
 from pydantic import BaseModel
 
+
 class LinkData(BaseModel):
     owner: str | None = None
     link: str
