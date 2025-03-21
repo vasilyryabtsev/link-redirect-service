@@ -12,7 +12,7 @@ class Link(Base):
     id: Mapped[int_pk]
     owner: Mapped[int] = mapped_column(ForeignKey("users.username"), nullable=True)
     link: Mapped[str_uniq]
-    code: Mapped[str] = mapped_column(String, nullable=False)
+    code: Mapped[str] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=datetime.now)
     usage_count: Mapped[int] = mapped_column(server_default=text('0'))
