@@ -1,14 +1,9 @@
-from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl, field_serializer
 
-
-class LinkData(BaseModel):
-    owner: str | None = None
-    link: str
-    code: str
-    created_at: datetime
-    updated_at: datetime
-    usage_count: int
     
 class NewLink(BaseModel):
-    link: str
+    link: HttpUrl
+    
+    @field_serializer('link')
+    def serealize_link(self, link: HttpUrl):
+        return str(link)
