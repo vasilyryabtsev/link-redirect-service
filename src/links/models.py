@@ -1,6 +1,6 @@
 from sqlalchemy import ForeignKey, text
 from sqlalchemy.orm import relationship, Mapped, mapped_column
-from sqlalchemy.types import String
+from sqlalchemy.types import String, DateTime
 from sqlalchemy import func
 from datetime import datetime
 
@@ -13,9 +13,10 @@ class Link(Base):
     owner: Mapped[int] = mapped_column(ForeignKey("users.username"), nullable=True)
     link: Mapped[str_uniq]
     code: Mapped[str] = mapped_column(String, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     usage_count: Mapped[int] = mapped_column(server_default=text('0'))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     
     user: Mapped["User"] = relationship("User", back_populates="links")
 
@@ -26,4 +27,6 @@ class Link(Base):
                 f"code={self.code!r}, "
                 f"created_at={self.created_at!r}, "
                 f"updated_at={self.updated_at!r}, "
-                f"usage_count={self.usage_count!r})")
+                f"usage_count={self.usage_count!r}, "
+                f"expires_at={self.expires_at!r})")
+
