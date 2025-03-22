@@ -24,6 +24,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 sqids = Sqids()
 
+URL = 'http://localhost:8000'
+
 def get_db_url() -> str:
     return (f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASS}@"
             f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}")
