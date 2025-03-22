@@ -1,5 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, insert, update
+from sqlalchemy import select, insert, update, delete
 from fastapi import status, HTTPException
 
 from src.links.models import Link
@@ -29,6 +29,14 @@ async def insert_link(session: AsyncSession, link: str, owner: str | None = None
 
 async def update_link(session: AsyncSession, id: int, values: dict) -> None:
     statement = update(Link).where(Link.id == id).values(values)
+    try:
+        await session.execute(statement)
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+async def delete_link(session: AsyncSession, id: int) -> None:
+    statement = delete(Link).where(Link.id == id)
     try:
         await session.execute(statement)
         await session.commit()
