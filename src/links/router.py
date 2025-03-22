@@ -5,7 +5,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 
 from src.users.schemas import UserData
-from src.users.service import get_current_active_user_soft
+from src.users.models import User
+from src.users.service import get_current_active_user_soft, get_current_active_user
 from src.database import get_async_session
 from src.schemas import Message
 from src.config import URL
@@ -14,7 +15,8 @@ from src.links.service import (get_code,
                                insert_link, 
                                update_link,
                                select_by_link,
-                               select_by_code)
+                               select_by_code,
+                               delete_link)
 
 
 router = APIRouter(prefix='/links', tags=['Link'])
@@ -57,3 +59,23 @@ async def redirect_to_original_link(
     }
     await update_link(session, link.id, values)
     return RedirectResponse(url=link.link)
+
+@router.delete("/{short_code}", status_code=status.HTTP_200_OK)
+async def delete_short_link(
+    short_code: str,
+    current_user: Annotated[UserData, Depends(get_current_active_user)],
+    session: AsyncSession = Depends(get_async_session)
+) -> Message:
+    link = await select_by_code(short_code, session)
+    if link is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This link doesn't exist."
+        )
+    if link.owner == current_user.model_dump()['username']:
+        await delete_link(session, link.id)
+        return Message(message=f"Short link for {link.link} removed.")
+    raise HTTPException(
+        status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+        detail=f"You are not the owner of {URL}/links/{link.code}."
+    )
