@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from passlib.context import CryptContext
 from sqids import Sqids
 
+BASE_URL = 'http://localhost:8000'
+
 class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
@@ -26,8 +28,6 @@ settings = Settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 sqids = Sqids()
-
-BASE_URL = 'http://localhost:8000'
 
 timezone = pytz.timezone('Europe/Moscow')
 
