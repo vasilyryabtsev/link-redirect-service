@@ -1,22 +1,26 @@
 from logging.config import fileConfig
-
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-
 from alembic import context
+
+import sys
+from os.path import dirname, abspath
+
+sys.path.insert(0, dirname(dirname(abspath(__file__))))
 
 from src.database import Base
 from src.config import settings
+from src.archive.models import *
 from src.links.models import *
 from src.users.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-# config.set_main_option(
-#     "sqlalchemy.url", 
-#     f"postgresql://{settings.DB_USER}:{settings.DB_PASS}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
-# )
+config.set_main_option(
+    "sqlalchemy.url", 
+    f"postgresql://{settings.DB_USER}:{settings.DB_PASS}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -35,7 +39,8 @@ target_metadata = Base.metadata
 
 
 def run_migrations_offline():
-    url = f"postgresql://{settings.DB_USER}:{settings.DB_PASS}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    url = config.get_main_option("sqlalchemy.url")
+    print(url)
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -47,7 +52,7 @@ def run_migrations_offline():
         context.run_migrations()
 
 def run_migrations_online():
-    url = f"postgresql://{settings.DB_USER}:{settings.DB_PASS}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    url = config.get_main_option("sqlalchemy.url")
     connectable = engine_from_config(
         {"sqlalchemy.url": url},
         prefix="sqlalchemy.",
