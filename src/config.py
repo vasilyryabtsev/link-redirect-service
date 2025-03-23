@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int
     LINK_ENCODING_SIZE: int
+    RABBITMQ_USER: str
+    RABBITMQ_PASS: str
     model_config = SettingsConfigDict(
         env_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
     )
