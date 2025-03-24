@@ -6,7 +6,7 @@ from datetime import datetime
 
 from src.users.schemas import UserData
 from src.users.service import get_current_active_user_soft, get_current_active_user
-from src.database import get_async_session
+from src.database import get_async_session, redis_cache, redis_stats
 from src.schemas import Message
 from src.links.schemas import Url, LinkData, CustomUrl
 from src.links.service import (code_to_url,
@@ -44,7 +44,13 @@ async def redirect_to_original_link(
     short_code: str,
     session: AsyncSession = Depends(get_async_session)
 ) -> RedirectResponse:
+    cached_link = redis_cache.get(short_code)
+    if cached_link is not None:
+        cached_link = cached_link.decode('utf-8')
+        redis_stats.zincrby("link_stats", 1, short_code)
+        return RedirectResponse(url=cached_link)
     link = await get_link_exists_by_code(session, short_code)
+    redis_cache.set(short_code, link.link, ex=60)
     values = {
         "updated_at": datetime.now(),
         "usage_count": link.usage_count + 1

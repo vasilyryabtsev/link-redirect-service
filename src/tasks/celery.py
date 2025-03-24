@@ -1,16 +1,14 @@
 from celery import Celery
 from celery.schedules import crontab
-
 from src.config import settings
 
-
-celery_app = Celery(
+app = Celery(
     "worker",
     broker=f"amqp://{settings.RABBITMQ_USER}:{settings.RABBITMQ_PASS}@rabbitmq:5672",
-    include=["src.tasks"],
+    include=["src.tasks.tasks"],
 )
 
-celery_app.conf.update(
+app.conf.update(
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
@@ -18,9 +16,16 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-celery_app.conf.beat_schedule = {
+app.conf.beat_schedule = {
     "cleanup-expired-links-every-minute": {
-        "task": "src.tasks.cleanup_expired_links_task",
+        "task": "src.tasks.tasks.cleanup_expired_links_task",
         "schedule": crontab(minute="*/1"),
     },
+    "update-stats-every-five-minute": {
+        "task": "src.tasks.tasks.update_stats_task",
+        "schedule": crontab(minute="*/1"),
+    }
 }
+
+if __name__ == '__main__':
+    app.start()
