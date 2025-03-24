@@ -32,9 +32,7 @@ async def clean_up_expired_links():
             }
             
             try:
-                # Архивируем ссылку
                 await session.execute(insert(ArchivedLink).values(values_dict))
-                # Удаляем оригинальную ссылку
                 await session.execute(delete(Link).where(Link.id == item.id))
                 await session.commit()
                 logger.info(f"Link {item.code} archived and deleted successfully.")
@@ -50,12 +48,10 @@ def cleanup_expired_links_task():
     
 async def update_stats():
     async for session in get_async_session():
-        # Получаем всю статистику из Redis
         stats = redis_stats.zrange("link_stats", 0, -1, withscores=True)
         print(stats)
         if stats:
             for short_code, count in stats:
-                # Получаем ссылку из БД
                 link = await get_link_exists_by_code(session, short_code.decode('utf-8'))
                 if link:
                     values = {
@@ -64,7 +60,6 @@ async def update_stats():
                     }
                     await update_link(session, link.id, values)
             
-            # Очищаем статистику после синхронизации
             redis_stats.delete("link_stats")
     return {'cached links stats:': stats}
 
