@@ -29,7 +29,7 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
 
   backend:
     build: .
@@ -40,16 +40,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      DB_NAME: ${DB_NAME}
-      DB_HOST: db
-      DB_PORT: 5432
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASS: ${RABBITMQ_PASS}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
     volumes:
       - ./alembic.ini:/app/alembic.ini
       - ./src/migrations/:/app/src/migrations
@@ -67,16 +57,6 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-    environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
-      DB_NAME: ${DB_NAME}
-      DB_HOST: db
-      DB_PORT: 5432
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASS: ${RABBITMQ_PASS}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
     command: >
       sh -c "celery -A src.tasks.celery beat --loglevel=info & 
              celery -A src.tasks.celery worker --loglevel=info"
@@ -85,11 +65,6 @@ services:
     build: .
     depends_on:
       - celery
-    environment:
-      RABBITMQ_USER: ${RABBITMQ_USER}
-      RABBITMQ_PASS: ${RABBITMQ_PASS}
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: 5672
     command: celery -A src.tasks.celery flower --port=5555
     ports:
       - "5555:5555"

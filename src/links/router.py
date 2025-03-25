@@ -1,5 +1,5 @@
 from typing import Optional, Annotated
-from fastapi import APIRouter, Depends, status, HTTPException, Query
+from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
@@ -8,6 +8,7 @@ from src.users.schemas import UserData
 from src.users.service import get_current_active_user_soft, get_current_active_user
 from src.database import get_async_session, redis_cache, redis_stats
 from src.schemas import Message
+from src.config import settings
 from src.links.schemas import Url, LinkData, CustomUrl
 from src.links.service import (code_to_url,
                                update_link,
@@ -50,7 +51,7 @@ async def redirect_to_original_link(
         redis_stats.zincrby("link_stats", 1, short_code)
         return RedirectResponse(url=cached_link)
     link = await get_link_exists_by_code(session, short_code)
-    redis_cache.set(short_code, link.link, ex=60)
+    redis_cache.set(short_code, link.link, ex=settings.REDIS_CACHE_EXPIRATION)
     values = {
         "updated_at": datetime.now(),
         "usage_count": link.usage_count + 1

@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase, declared_attr, mapped_column
 from sqlalchemy.types import String, Integer
 
-from src.config import get_db_url
+from src.config import get_db_url, settings
 
 
 DATABASE_URL = get_db_url()
@@ -26,5 +26,5 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_maker() as session:
         yield session
 
-redis_cache = redis.Redis(host='redis_app', port=6379, db=0)
-redis_stats = redis.Redis(host='redis_app', port=6379, db=1)
+redis_cache = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
+redis_stats = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=1)

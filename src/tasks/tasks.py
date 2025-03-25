@@ -3,7 +3,6 @@ import asyncio
 
 from datetime import datetime
 from celery import shared_task
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete, insert
 
 from src.database import get_async_session, redis_stats
@@ -39,7 +38,7 @@ async def clean_up_expired_links():
             except Exception as e:
                 logger.error(f"Error processing link {item.code}: {e}")
                 await session.rollback()
-        return {'expired links': [item.link for item in result.scalars().fetchall()]}
+        return {'expired links': [item.link for item in result.scalars().fetchall()]} or {'message': 'No expired links to clean up.'}
 
 @shared_task(name='src.tasks.tasks.cleanup_expired_links_task')
 def cleanup_expired_links_task():
@@ -61,7 +60,7 @@ async def update_stats():
                     await update_link(session, link.id, values)
             
             redis_stats.delete("link_stats")
-    return {'cached links stats:': stats}
+    return {'cached links stats:': stats} or {'message': 'No stats to update.'}
 
 @shared_task(name='src.tasks.tasks.update_stats_task')
 def cleanup_expired_links_task():
