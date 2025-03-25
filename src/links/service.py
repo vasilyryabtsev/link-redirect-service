@@ -5,14 +5,14 @@ from datetime import datetime
 
 from src.links.models import Link
 from src.users.schemas import UserData
-from src.config import settings, sqids, BASE_URL, timezone
+from src.config import settings, sqids, timezone
 
 
 def get_code(link_id: int) -> str:
     return sqids.encode(list(range(link_id, link_id + settings.LINK_ENCODING_SIZE)))
 
 def code_to_url(code: str) -> str:
-    return f"{BASE_URL}/links/{code}"
+    return f"http://{settings.FASTAPI_HOST}:{settings.FASTAPI_PORT}/links/{code}"
 
 async def select_by_link(link: str, session: AsyncSession) -> (Link | None):
     query = select(Link).where(Link.link == link)

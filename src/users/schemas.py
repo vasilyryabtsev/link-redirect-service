@@ -5,7 +5,6 @@ class RegUser(BaseModel):
     username: str
     password: str
     
-# User
 class UserData(BaseModel):
     username: str | None = None
     disabled: bool | None = None
