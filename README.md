@@ -83,7 +83,7 @@ openssl rand -hex 32
 docker-compose up --build
 ```
 
-### 4. Сервисы
+## Сервисы
 
 - FastAPI: [http://localhost:8000](http://localhost:8000)
 ![alt text](docs/image.png)
