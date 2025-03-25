@@ -86,10 +86,13 @@ docker-compose up --build
 ## Сервисы
 
 - FastAPI: [http://localhost:8000](http://localhost:8000)
+
 ![alt text](docs/image.png)
 
 - RabbitMQ (UI): [http://localhost:15672](http://localhost:15672)
+
 ![alt text](docs/image-1.png)
 
 - Flower (мониторинг Celery): [http://localhost:5555](http://localhost:5555)
+
 ![alt text](docs/image-2.png)
