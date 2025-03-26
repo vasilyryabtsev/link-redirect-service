@@ -16,6 +16,16 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
     
 async def clean_up_expired_links():
+    """
+    Очищает просроченные ссылки, перенося их в архив и удаляя из активных.
+
+    Находит ссылки с истекшим сроком действия (expires_at), переносит их
+    в таблицу архивных ссылок и удаляет из основной таблицы. Возвращает
+    словарь с очищенными ссылками или сообщение, если просроченных нет.
+
+    Возвращает:
+        dict: Словарь с архивными ссылками или сообщение об отсутствии.
+    """
     async for session in get_async_session():
         query = select(Link).where(Link.expires_at < datetime.now(timezone))
         result = await session.execute(query)
@@ -42,10 +52,25 @@ async def clean_up_expired_links():
 
 @shared_task(name='src.tasks.tasks.cleanup_expired_links_task')
 def cleanup_expired_links_task():
+    """
+    Celery-задача для синхронного вызова clean_up_expired_links.
+    
+    Создает event loop и запускает асинхронную функцию очистки.
+    """
     loop = asyncio.get_event_loop()
     loop.run_until_complete(clean_up_expired_links())
     
 async def update_stats():
+    """
+    Обновляет статистику использования ссылок из Redis в БД.
+
+    Переносит накопленные данные об использовании ссылок из Redis
+    в основную базу данных, увеличивая счетчики usage_count,
+    после чего очищает кэш в Redis.
+
+    Возвращает:
+        dict: Статистику из кэша или сообщение об отсутствии данных.
+    """
     async for session in get_async_session():
         stats = redis_stats.zrange("link_stats", 0, -1, withscores=True)
         print(stats)
@@ -64,5 +89,10 @@ async def update_stats():
 
 @shared_task(name='src.tasks.tasks.update_stats_task')
 def cleanup_expired_links_task():
+    """
+    Celery-задача для синхронного вызова update_stats.
+    
+    Создает event loop и запускает асинхронное обновление статистики.
+    """
     loop = asyncio.get_event_loop()
     loop.run_until_complete(update_stats())

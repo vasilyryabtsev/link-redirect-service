@@ -28,6 +28,20 @@ async def create_short_link(
     session: AsyncSession = Depends(get_async_session),
     current_user: Optional[UserData] = Depends(get_current_active_user_soft)
 ) -> Url:
+    """
+    Создает сокращенную версию длинной URL-ссылки.
+
+    Args:
+        url: Объект с оригинальным URL и дополнительными параметрами.
+        session: Асинхронная сессия SQLAlchemy.
+        current_user: Данные текущего пользователя (опционально).
+
+    Returns:
+        Объект с сокращенной версией URL.
+
+    Raises:
+        HTTPException: 208 если ссылка уже имеет сокращенную версию.
+    """
     link_dict = url.model_dump()
     link_old = await select_by_link(link_dict['link'], session)
     if link_old:
@@ -45,6 +59,21 @@ async def redirect_to_original_link(
     short_code: str,
     session: AsyncSession = Depends(get_async_session)
 ) -> RedirectResponse:
+    """
+    Перенаправляет по сокращенной ссылке на оригинальный URL.
+
+    Args:
+        short_code: Уникальный код сокращенной ссылки.
+        session: Асинхронная сессия SQLAlchemy.
+
+    Returns:
+        RedirectResponse: Перенаправление на оригинальный URL.
+
+    Notes:
+        - Использует Redis для кэширования
+        - Обновляет счетчик переходов и дату последнего использования,
+          если ссылка не найдена в кэше
+    """
     cached_link = redis_cache.get(short_code)
     if cached_link is not None:
         cached_link = cached_link.decode('utf-8')
@@ -65,6 +94,21 @@ async def delete_short_link(
     current_user: Annotated[UserData, Depends(get_current_active_user)],
     session: AsyncSession = Depends(get_async_session)
 ) -> Message:
+    """
+    Удаляет сокращенную ссылку.
+
+    Args:
+        short_code: Уникальный код сокращенной ссылки.
+        current_user: Данные аутентифицированного пользователя.
+        session: Асинхронная сессия SQLAlchemy.
+
+    Returns:
+        Сообщение об успешном удалении.
+
+    Notes:
+        - Доступно только владельцу ссылки
+        - Удаляет как саму ссылку, так и связанные статистические данные
+    """
     link = await get_user_link(session, current_user, short_code)
     await delete_link(session, link.id)
     return Message(message=f"{code_to_url(link.code)} has been removed.")
@@ -75,6 +119,21 @@ async def update_short_link(
     current_user: Annotated[UserData, Depends(get_current_active_user)],
     session: AsyncSession = Depends(get_async_session)
 ) -> Url:
+    """
+    Обновляет (пересоздает) сокращенную ссылку.
+
+    Args:
+        short_code: Уникальный код сокращенной ссылки.
+        current_user: Данные аутентифицированного пользователя.
+        session: Асинхронная сессия SQLAlchemy.
+
+    Returns:
+        Новый сокращенный URL.
+
+    Notes:
+        - Фактически создает новую ссылку с тем же оригинальным URL
+        - Сохраняет параметры оригинальной ссылки (expires_at и владельца)
+    """
     link = await get_user_link(session, current_user, short_code)
     await delete_link(session, link.id)
     code = await generate_short_link(session=session,
@@ -88,6 +147,16 @@ async def get_short_link_stats(
     short_code: str,
     session: AsyncSession = Depends(get_async_session)
 ) -> LinkData:
+    """
+    Возвращает статистику по сокращенной ссылке.
+
+    Args:
+        short_code: Уникальный код сокращенной ссылки.
+        session: Асинхронная сессия SQLAlchemy.
+
+    Returns:
+        Данные ссылки.
+    """
     link = await get_link_exists_by_code(session, short_code)
     return LinkData(
         link=link.link,
@@ -102,5 +171,18 @@ async def search_link(
     original_url: str,
     session: AsyncSession = Depends(get_async_session)
 ) -> Url:
+    """
+    Ищет сокращенную версию по оригинальному URL.
+
+    Args:
+        original_url: Полный оригинальный URL для поиска.
+        session: Асинхронная сессия SQLAlchemy.
+
+    Returns:
+        Сокращенная версия URL, если найдена.
+
+    Notes:
+        - Поиск происходит по точному совпадению URL
+    """
     link = await get_link_exists_by_link(session, original_url)
     return Url(link=code_to_url(link.code))
