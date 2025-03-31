@@ -63,4 +63,6 @@ celery
 flower
 redis
 pytest
+pytest-cov
 pytest-asyncio
+coverage
