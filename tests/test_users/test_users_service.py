@@ -3,6 +3,7 @@ import pytest_asyncio
 
 from sqlalchemy import select
 from datetime import timedelta
+from jwt.exceptions import InvalidTokenError
 
 from tests.conftest import db_session
 from test_users.test_users_models import valid_user
@@ -76,13 +77,16 @@ async def test_authenticate_user(db_session, valid_user):
 @pytest.mark.parametrize("expires_delta", [None, timedelta(minutes=15)])
 def test_create_access_token(valid_user, expires_delta):
     token = create_access_token(
-        data={
-            "sub": valid_user.username,
-            "hashed_password": valid_user.hashed_password
-        },
+        data={"sub": valid_user.username},
         expires_delta=expires_delta
     )
     assert isinstance(token, str)
+
+@pytest.mark.asyncio
+async def test_get_current_user_none_user(valid_user):
+    token = create_access_token(data={"sub": valid_user.username})
+    with pytest.raises(Exception):
+        await get_current_user(token)
 
 @pytest.mark.asyncio
 async def test_insert_user(db_session, valid_user):
@@ -96,3 +100,17 @@ async def test_insert_user(db_session, valid_user):
     user = result.scalar_one_or_none()
     assert user is not None
     assert user.username == valid_user.username
+    
+@pytest.mark.asyncio
+async def test_get_current_user_raise_exception(db_session, valid_user):
+    await insert_user(
+        username=valid_user.username,
+        hashed_password=valid_user.hashed_password,
+        session=db_session
+    )
+    with pytest.raises(Exception):
+        await insert_user(
+            username=valid_user.username,
+            hashed_password=valid_user.hashed_password,
+            session=db_session
+        )
